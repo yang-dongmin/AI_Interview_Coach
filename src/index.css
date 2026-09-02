@@ -1,0 +1,19 @@
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", sans-serif;
+  background: #fafafa;
+  color: #222;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  border-radius: 8px;
+  background: #222;
+  color: white;
+}
+
+button:disabled {
+  background: #999;
+  cursor: not-allowed;
+}
