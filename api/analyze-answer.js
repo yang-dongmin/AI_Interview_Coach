@@ -1,69 +1,84 @@
-// 면접 질문 + 사용자 답변을 받아서 AI 면접관 피드백을 생성하는 API
-// 프론트에서는 /api/analyze-answer 로 호출됨
-
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "POST 요청만 허용됩니다" });
   }
 
-  const { question, answer, jobTitle } = req.body;
+  const { question, answer } = req.body;
 
   if (!question || !answer) {
     return res.status(400).json({ error: "question과 answer가 필요합니다" });
   }
 
+  const apiKey = process.env.GEMINI_API_KEY || process.env.ANTHROPIC_API_KEY;
+
+  if (!apiKey) {
+    return res.status(500).json({ error: "API 키가 설정되지 않았습니다." });
+  }
+
   try {
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "x-api-key": process.env.ANTHROPIC_API_KEY,
-        "anthropic-version": "2023-06-01",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-6",
-        max_tokens: 1000,
-        messages: [
-          {
-            role: "user",
-            content: `너는 15년차 채용 면접관이야. 아래 면접 질문과 지원자의 답변을 보고 평가해줘.
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                {
+                  text: `너는 채용 면접 전문가이자 코치야. 
+면접 질문: "${question}"
+지원자 답변: "${answer}"
 
-직무: ${jobTitle || "일반"}
-질문: ${question}
-답변: ${answer}
-
-평가 기준:
-1. 구조 - 두괄식으로 결론부터 말했는가
-2. 구체성 - 숫자나 사례가 있는가, 뭉뚱그리지 않았는가
-3. 직무 연관성 - 답변이 지원 직무와 잘 연결되는가
-
-반드시 아래 JSON 형식으로만 답해줘. 다른 설명은 붙이지 마.
-
-{
-  "goodPoint": "잘한 점 한 가지",
-  "improvements": ["개선점1", "개선점2"],
-  "improvedAnswer": "개선된 답변 예시 전체"
-}`,
+위 답변을 분석해서 잘한 점 1가지, 개선점 2가지, 그리고 개선된 답변 예시를 작성해 줘.`,
+                },
+              ],
+            },
+          ],
+          generationConfig: {
+            responseMimeType: "application/json",
+            responseSchema: {
+              type: "OBJECT",
+              properties: {
+                goodPoint: { 
+                  type: "STRING", 
+                  description: "잘한 점 1가지" 
+                },
+                improvements: {
+                  type: "ARRAY",
+                  items: { type: "STRING" },
+                  description: "개선점 2가지 리스트",
+                },
+                improvedAnswer: { 
+                  type: "STRING", 
+                  description: "Before-After용 개선된 답변 예시" 
+                },
+              },
+              required: ["goodPoint", "improvements", "improvedAnswer"],
+            },
           },
-        ],
-      }),
-    });
+        }),
+      }
+    );
 
     if (!response.ok) {
       const errText = await response.text();
-      console.error("Anthropic API 오류:", errText);
-      return res.status(502).json({ error: "LLM 호출에 실패했습니다" });
+      console.error("Gemini API Error Response:", errText);
+      return res.status(response.status).json({ error: "Gemini API 호출 실패", details: errText });
     }
 
     const data = await response.json();
-    const rawText = data.content[0].text;
+    const resultText = data.candidates[0].content.parts[0].text;
+    const parsedData = JSON.parse(resultText);
 
-    const cleaned = rawText.replace(/```json|```/g, "").trim();
-    const parsed = JSON.parse(cleaned);
-
-    return res.status(200).json(parsed);
+    return res.status(200).json(parsedData);
   } catch (err) {
-    console.error("서버 오류:", err);
-    return res.status(500).json({ error: "답변 분석 중 오류가 발생했습니다" });
+    console.error("서버 분석 오류:", err);
+    return res.status(500).json({
+      error: "답변 분석 중 오류가 발생했습니다",
+      details: err.message || err,
+    });
   }
 }
