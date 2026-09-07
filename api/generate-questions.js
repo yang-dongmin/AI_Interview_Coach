@@ -1,5 +1,10 @@
-// 직무명을 받아서 예상 면접 질문 3개를 생성하는 API
-// 프론트에서는 /api/generate-questions 로 호출됨 (Vercel이 자동 라우팅)
+import { GoogleGenAI, Type } from "@google/genai";
+
+// Vercel 환경변수에서 API 키를 읽어와 초기화합니다.
+// (Vercel에 GEMINI_API_KEY 또는 ANTHROPIC_API_KEY로 설정되어 있다면 해당 이름을 사용하세요)
+const ai = new GoogleGenAI({
+  apiKey: process.env.GEMINI_API_KEY || process.env.ANTHROPIC_API_KEY,
+});
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -13,44 +18,36 @@ export default async function handler(req, res) {
   }
 
   try {
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "x-api-key": process.env.ANTHROPIC_API_KEY,
-        "anthropic-version": "2023-06-01",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-6",
-        max_tokens: 500,
-        messages: [
-          {
-            role: "user",
-            content: `너는 채용 면접 전문가야. "${jobTitle}" 직무 면접에서 실제로 자주 나오는 질문 3개를 뽑아줘.
-반드시 아래 JSON 형식으로만 답해줘. 다른 설명은 붙이지 마.
-
-{"questions": ["질문1", "질문2", "질문3"]}`,
+    // Gemini 2.5 Flash 모델 사용
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: `너는 채용 면접 전문가야. "${jobTitle}" 직무 면접에서 실제로 자주 나오는 핵심 예상 질문 3개를 작성해 줘.`,
+      config: {
+        // Gemini의 Structured Outputs 기능을 활용하여 100% 보장된 JSON 형태로 응답받습니다.
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            questions: {
+              type: Type.ARRAY,
+              items: { type: Type.STRING },
+              description: "면접 예상 질문 3개 리스트",
+            },
           },
-        ],
-      }),
+          required: ["questions"],
+        },
+      },
     });
 
-    if (!response.ok) {
-      const errText = await response.text();
-      console.error("Anthropic API 오류:", errText);
-      return res.status(502).json({ error: "LLM 호출에 실패했습니다" });
-    }
+    // Gemini가 반환한 JSON 텍스트를 바로 파싱합니다.
+    const parsedData = JSON.parse(response.text);
 
-    const data = await response.json();
-    const rawText = data.content[0].text;
-
-    // LLM이 JSON 형태로 답한 걸 파싱 (혹시 모를 ```json 코드펜스 제거)
-    const cleaned = rawText.replace(/```json|```/g, "").trim();
-    const parsed = JSON.parse(cleaned);
-
-    return res.status(200).json(parsed);
+    return res.status(200).json(parsedData);
   } catch (err) {
-    console.error("서버 오류:", err);
-    return res.status(500).json({ error: "질문 생성 중 오류가 발생했습니다" });
+    console.error("Gemini API 서버 오류:", err);
+    return res.status(500).json({ 
+      error: "질문 생성 중 오류가 발생했습니다", 
+      details: err.message || err 
+    });
   }
 }
