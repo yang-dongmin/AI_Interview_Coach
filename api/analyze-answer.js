@@ -73,6 +73,7 @@ export default async function handler(req, res) {
     const resultText = data.candidates[0].content.parts[0].text;
     const parsedData = JSON.parse(resultText);
 
+    // AI 분석 결과 반환
     return res.status(200).json(parsedData);
   } catch (err) {
     console.error("서버 분석 오류:", err);
@@ -81,21 +82,4 @@ export default async function handler(req, res) {
       details: err.message || err,
     });
   }
-}
-
-export default async function handler(req, res) {
-  // 1. AI API 호출 및 결과 수령
-  // ... LLM 처리 로직 ...
-
-  // 2. 남은 사용량 계산 또는 헤더/DB에서 조회
-  const remainingUsage = 85; // 예: 100회 중 85회 남음 (또는 토큰 퍼센티지)
-
-  // 3. 결과와 함께 잔여량 반환
-  res.status(200).json({
-    result: aiAnalysisResult,
-    usage: {
-      remaining: remainingUsage,
-      total: 100
-    }
-  });
 }
