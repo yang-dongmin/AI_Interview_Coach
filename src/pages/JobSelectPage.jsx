@@ -16,13 +16,16 @@ export default function JobSelectPage({
       setError("직무를 입력해 주세요.");
       return;
     }
+
+    // 💡 새 질문을 요청할 때 기존 질문과 에러 메시지를 깔끔하게 초기화합니다.
     setError("");
+    onQuestionsGenerated({ jobTitle, questions: [] });
     setLoading(true);
+
     try {
       const data = await generateQuestions(jobTitle);
       const generatedQuestions = data.questions || [];
       onQuestionsGenerated({ jobTitle, questions: generatedQuestions });
-      onUseQuota();
     } catch (err) {
       setError("질문을 불러오지 못했습니다. 다시 시도해 주세요.");
     } finally {
