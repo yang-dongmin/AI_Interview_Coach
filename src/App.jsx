@@ -2,21 +2,21 @@ import { useState } from "react";
 import JobSelectPage from "./pages/JobSelectPage";
 import AnswerPage from "./pages/AnswerPage";
 import FeedbackPage from "./pages/FeedbackPage";
-import { UsageBar } from "./components/UsageBar";
 
 export default function App() {
   const [step, setStep] = useState("select");
-  const [selected, setSelected] = useState(null);
+  const [jobTitle, setJobTitle] = useState("");
+  const [questions, setQuestions] = useState([]);
+  const [selectedQuestion, setSelectedQuestion] = useState("");
   const [result, setResult] = useState(null);
 
-  const [remainingUsage, setRemainingUsage] = useState(20);
+  function handleQuestionsGenerated({ jobTitle, questions }) {
+    setJobTitle(jobTitle);
+    setQuestions(questions);
+  }
 
-  const handleUseQuota = () => {
-    setRemainingUsage((prev) => Math.max(0, prev - 1));
-  };
-
-  function handleSelectQuestion(data) {
-    setSelected(data);
+  function handleSelectQuestion(question) {
+    setSelectedQuestion(question);
     setStep("answer");
   }
 
@@ -26,44 +26,61 @@ export default function App() {
   }
 
   function handleRestart() {
-    setSelected(null);
+    setSelectedQuestion("");
     setResult(null);
     setStep("select");
   }
 
   return (
-    <div style={{ maxWidth: 480, margin: "0 auto", padding: 24 }}>
-      {/* 💡 1. 제목 타이틀 복구 */}
-      <h1 style={{ marginBottom: 16 }}>AI 면접 코치</h1>
+    <div style={{ minHeight: "100vh", backgroundColor: "#0b0f19", color: "#f1f5f9" }}>
+      {/* 🌐 상단 네비게이션 헤더 */}
+      <header style={{
+        borderBottom: "1px solid #1e293b",
+        backgroundColor: "#0f172a",
+        padding: "16px 24px",
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center"
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={{ fontSize: 24 }}>🎯</span>
+          <h1 style={{ fontSize: 20, margin: 0, fontWeight: 700, background: "linear-gradient(90deg, #38bdf8, #818cf8)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+            AI Interview Coach
+          </h1>
+        </div>
+        <div style={{ fontSize: 13, color: "#94a3b8", backgroundColor: "#1e293b", padding: "6px 12px", borderRadius: 20 }}>
+          PRO TIER
+        </div>
+      </header>
 
-      {/* 💡 2. UsageBar 배치 */}
-      <UsageBar remaining={remainingUsage} total={20} />
+      {/* 메인 콘텐츠 영역 */}
+      <main style={{ maxWidth: 680, margin: "0 auto", padding: "24px 16px" }}>
+        {step === "select" && (
+          <JobSelectPage
+            jobTitle={jobTitle}
+            setJobTitle={setJobTitle}
+            questions={questions}
+            onQuestionsGenerated={handleQuestionsGenerated}
+            onSelectQuestion={handleSelectQuestion}
+          />
+        )}
 
-      {step === "select" && (
-        <JobSelectPage
-          remainingUsage={remainingUsage}
-          onUseQuota={handleUseQuota}
-          onSelectQuestion={handleSelectQuestion}
-        />
-      )}
+        {step === "answer" && (
+          <AnswerPage
+            question={selectedQuestion}
+            jobTitle={jobTitle}
+            onFeedback={handleFeedback}
+            onBack={() => setStep("select")}
+          />
+        )}
 
-      {step === "answer" && (
-        <AnswerPage
-          question={selected.question}
-          jobTitle={selected.jobTitle}
-          remainingUsage={remainingUsage}
-          onUseQuota={handleUseQuota}
-          onFeedback={handleFeedback}
-          onBack={() => setStep("select")}
-        />
-      )}
-
-      {step === "feedback" && (
-        <FeedbackPage 
-          result={result} 
-          onRestart={handleRestart} 
-        />
-      )}
+        {step === "feedback" && (
+          <FeedbackPage 
+            result={result} 
+            onRestart={handleRestart} 
+          />
+        )}
+      </main>
     </div>
   );
 }
