@@ -104,10 +104,6 @@ export default function AnswerPage({
       setError("답변을 입력하거나 음성으로 말씀해 주세요.");
       return;
     }
-    if (remainingUsage <= 0) {
-      setError("오늘의 AI 일일 사용량을 모두 소진했습니다.");
-      return;
-    }
 
     setError("");
     setLoading(true);
