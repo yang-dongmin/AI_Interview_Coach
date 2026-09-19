@@ -1,45 +1,45 @@
-# AI 면접 코치
+# 🎯 AI Interview Coach (AI 면접 코치)
 
-원티드 AI 챔피언십 2026 출품작. 직무를 입력하면 예상 면접 질문을 받고,
-답변을 입력하면 AI가 면접관 역할로 피드백을 준다.
+> **원티드 AI 챔피언십 2026 출품작**[cite: 4]
+> 사용자 맞춤형 면접 질문 생성부터 음성 답변 수신, AI 기반 우수 피드백 분석까지 제공하는 화상 인터뷰 코칭 웹 서비스입니다[cite: 1, 2].
 
-## 시작하기
+---
 
-1. 의존성 설치
-```
+## 🔗 Live Demo
+* **배포 URL:** [https://ai-interview-coach-tan-nu.vercel.app](https://ai-interview-coach-tan-nu.vercel.app)[cite: 4]
+
+---
+
+## ✨ 주요 기능 (Key Features)
+
+1. **직무 맞춤형 면접 질문 생성**
+   - 사용자 지정 직무(예: 백엔드 개발자, 서비스 기획자 등)에 따른 핵심 예상 질문 3개 실시간 도출[cite: 1].
+2. **화상 인터뷰 & STT 음성 답변 입력**
+   - ZOOM / Meet 스타일의 화상 캐릭터 UI 및 Web Speech API 기반 음성 인식(STT) 지원[cite: 1, 2].
+   - 질문 TTS(음성 낭독) 기능 지원.
+3. **AI-Hub 데이터셋 기반 Few-Shot 피드백**
+   - 과기정통부 / AI-Hub '채용면접 인터뷰 데이터셋' 기반 평가 기준 이식[cite: 1].
+   - 잘한 점, 개선점 2가지, Before-After 개선된 답변 예시 제공[cite: 1].
+4. **피드백 결과 복사 및 이력 유지**
+   - 분석 결과 원클릭 클립보드 복사[cite: 1].
+   - 토큰 절약을 위한 세션 내 질문 리스트 상태 보존[cite: 1].
+
+---
+
+## 🛠 기술 스택 (Tech Stack)
+
+* **Frontend:** React (Vite), JavaScript, CSS3[cite: 1, 4]
+* **Backend:** Vercel Serverless Functions[cite: 1, 4]
+* **AI & API:** Google Gemini 2.5 Flash API, Web Speech API (STT/TTS)[cite: 1, 2]
+* **Dataset:** 과학기술정보통신부 / AI-Hub 채용면접 인터뷰 데이터셋 (Few-Shot Prompting 적용)[cite: 1]
+
+---
+
+## 🚀 실행 가이드 (Getting Started)
+
+```bash
+# 1. 의존성 설치
 npm install
-```
 
-2. .env 파일에 API 키 입력
-```
-ANTHROPIC_API_KEY=sk-ant-...
-```
-(.env.example 참고. .env는 절대 git에 올리지 않는다)
-
-3. 로컬 개발 서버 실행
-```
-npm run dev
-```
-Vite dev 서버만으로는 /api 함수가 안 돌아간다. Vercel CLI로 실행해야
-서버리스 함수까지 같이 테스트할 수 있다:
-```
-npm install -g vercel
+# 2. Vercel CLI 로컬 개발 서버 실행 (Serverless API 테스트용)
 vercel dev
-```
-
-## 배포
-
-Vercel에 GitHub 레포를 연결하고, 프로젝트 설정 > Environment Variables에
-ANTHROPIC_API_KEY를 등록하면 끝. push할 때마다 자동 배포된다.
-
-## 폴더 구조
-
-```
-api/                  서버리스 함수 (LLM API 키는 여기서만 사용)
-  generate-questions.js
-  analyze-answer.js
-src/
-  pages/               화면 3개 (직무선택 -> 답변입력 -> 피드백)
-  lib/api.js           프론트에서 /api/* 호출하는 함수 모음
-  App.jsx              화면 전환 로직
-```
